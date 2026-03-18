@@ -1,4 +1,4 @@
-# Verify-ContentApproval.ps1
+# Disable-OneDriveContentApproval.ps1
 # Requires: PnP.PowerShell module
 # CSV expected columns: OneDriveSiteUrl
 
