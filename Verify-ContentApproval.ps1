@@ -1,9 +1,13 @@
+# Verify-ContentApproval.ps1
 # Requires: PnP.PowerShell module
 # CSV expected columns: OneDriveSiteUrl
 
 param(
     [Parameter(Mandatory)]
-    [string]$CsvPath
+    [string]$CsvPath,
+
+    [Parameter(Mandatory)]
+    [string]$ClientId  # Entra ID App Registration Client ID
 )
 
 $logPath = ".\ContentApprovalReport_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
@@ -12,7 +16,7 @@ $sites = Import-Csv -Path $CsvPath
 
 foreach ($site in $sites) {
     try {
-        Connect-PnPOnline -Url $site.OneDriveSiteUrl -UseWebLogin
+        Connect-PnPOnline -Url $site.OneDriveSiteUrl -Interactive -ClientId $ClientId
 
         $lib = Get-PnPList -Identity "Documents"
 
