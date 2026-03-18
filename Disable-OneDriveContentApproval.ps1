@@ -7,41 +7,25 @@ param(
     [string]$CsvPath,
 
     [Parameter(Mandatory)]
-    [string]$TenantId  # e.g. contoso.onmicrosoft.com or the GUID
+    [string]$ClientId  # Entra ID App Registration Client ID
 )
 
-$logPath = ".\ContentApprovalReport_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
-$results = [System.Collections.Generic.List[PSCustomObject]]::new()
 $sites = Import-Csv -Path $CsvPath
 
 foreach ($site in $sites) {
     try {
-        Connect-PnPOnline -Url $site.OneDriveSiteUrl `
-            -DeviceLogin `
-            -ClientId "31359c7f-bd7e-475c-86db-fdb8c937548e" `
-            -Tenant $TenantId
+        Connect-PnPOnline -Url $site.OneDriveSiteUrl -Interactive -ClientId $ClientId
 
         $lib = Get-PnPList -Identity "Documents"
 
         if ($lib.EnableModeration) {
-            Write-Host "$($site.OneDriveSiteUrl) — Content approval ON." -ForegroundColor Yellow
-            $status = "On"
+            Set-PnPList -Identity "Documents" -EnableModeration $false
+            Write-Host "$($site.OneDriveSiteUrl) — Content approval disabled." -ForegroundColor Green
         } else {
-            Write-Host "$($site.OneDriveSiteUrl) — Content approval off." -ForegroundColor Gray
-            $status = "Off"
+            Write-Host "$($site.OneDriveSiteUrl) — Already off." -ForegroundColor Gray
         }
     }
     catch {
         Write-Host "$($site.OneDriveSiteUrl) — Error: $($_.Exception.Message)" -ForegroundColor Red
-        $status = "Error: $($_.Exception.Message)"
     }
-
-    $results.Add([PSCustomObject]@{
-        OneDriveSiteUrl = $site.OneDriveSiteUrl
-        ContentApproval = $status
-        Timestamp       = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-    })
 }
-
-$results | Export-Csv -Path $logPath -NoTypeInformation -Encoding UTF8
-Write-Host "`nReport written to: $logPath" -ForegroundColor Green
